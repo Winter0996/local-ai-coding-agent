@@ -8,3 +8,11 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
+
+[tool.ruff.lint.per-file-ignores]
+# app/main.py deliberately calls load_dotenv() before importing app.* modules,
+# since several of those modules (e.g. app.auth.tokens) read required env
+# vars like JWT_SECRET at import time — .env has to be loaded first. E402
+# ("import not at top of file") is a false positive for this specific,
+# intentional ordering.
+"app/main.py" = ["E402"]
