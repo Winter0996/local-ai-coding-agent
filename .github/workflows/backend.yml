@@ -29,6 +29,10 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Run tests
+        env:
+          # A CI-only throwaway secret — never a real production JWT_SECRET.
+          JWT_SECRET: ci-test-secret-not-for-production-use-only-for-pytest
+          CODEFORGE_DB_PATH: ":memory:"
         run: pytest
 
       - name: Run Ruff
