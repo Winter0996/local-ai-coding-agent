@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+httpx
+pydantic[email]
+pytest
+pytest-asyncio
+ruff
+sqlmodel
+argon2-cffi
+pyjwt
+python-multipart
