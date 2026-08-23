@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from "react";
 
 import { AuthForm } from "./components/AuthForm";
+import { RepoPanel } from "./components/RepoPanel";
 import { useAuth } from "./context/AuthContext";
 
 type ChatResponse = {
@@ -91,6 +92,7 @@ function ChatPanel() {
 
 function App() {
   const { isLoading, isAuthenticated } = useAuth();
+  const [tab, setTab] = useState<"chat" | "repo">("repo");
 
   return (
     <main className="app-shell">
@@ -108,7 +110,25 @@ function App() {
           <p>Checking session...</p>
         </section>
       ) : isAuthenticated ? (
-        <ChatPanel />
+        <>
+          <nav className="tab-bar">
+            <button
+              type="button"
+              className={tab === "repo" ? "tab-active" : ""}
+              onClick={() => setTab("repo")}
+            >
+              Repository
+            </button>
+            <button
+              type="button"
+              className={tab === "chat" ? "tab-active" : ""}
+              onClick={() => setTab("chat")}
+            >
+              Agent Playground
+            </button>
+          </nav>
+          {tab === "repo" ? <RepoPanel /> : <ChatPanel />}
+        </>
       ) : (
         <AuthForm />
       )}

@@ -24,6 +24,7 @@ def init_db() -> None:
     # Importing here (not at module top) avoids circular imports between
     # db.py and the model modules that import `engine`/`Session` from db.py.
     from app.auth.models import RefreshToken, User  # noqa: F401
+    from app.repository.models import Workspace  # noqa: F401
 
     SQLModel.metadata.create_all(engine)
 

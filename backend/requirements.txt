@@ -9,3 +9,4 @@ sqlmodel
 argon2-cffi
 pyjwt
 python-multipart
+python-dotenv
