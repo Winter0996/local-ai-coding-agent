@@ -10,3 +10,5 @@ argon2-cffi
 pyjwt
 python-multipart
 python-dotenv
+chromadb
+sentence-transformers
