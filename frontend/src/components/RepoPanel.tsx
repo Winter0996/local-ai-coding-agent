@@ -4,6 +4,8 @@ import { useAuth } from "../context/AuthContext";
 import type {
   FileContent,
   FileTree,
+  IndexResult,
+  IndexStatus,
   RepositoryMetadata,
   SearchResult,
   Workspace,
@@ -16,7 +18,11 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-export function RepoPanel() {
+type RepoPanelProps = {
+  onWorkspaceSelected?: (workspace: Workspace | null) => void;
+};
+
+export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
   const { fetchWithAuth } = useAuth();
 
   const [path, setPath] = useState("");
@@ -26,11 +32,45 @@ export function RepoPanel() {
   const [selectedFile, setSelectedFile] = useState<FileContent | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
+  const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null);
+  const [lastIndexResult, setLastIndexResult] = useState<IndexResult | null>(null);
 
   const [selecting, setSelecting] = useState(false);
   const [loadingFile, setLoadingFile] = useState(false);
   const [searching, setSearching] = useState(false);
+  const [indexing, setIndexing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  async function refreshIndexStatus(workspaceId: string) {
+    const response = await fetchWithAuth(`/api/repo/${workspaceId}/index/status`);
+    if (response.ok) {
+      setIndexStatus((await response.json()) as IndexStatus);
+    }
+  }
+
+  async function handleIndex() {
+    if (!workspace) return;
+
+    setIndexing(true);
+    setError(null);
+
+    try {
+      const response = await fetchWithAuth(`/api/repo/${workspace.id}/index`, {
+        method: "POST",
+      });
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail ?? "Indexing failed.");
+      }
+      const result = (await response.json()) as IndexResult;
+      setLastIndexResult(result);
+      await refreshIndexStatus(workspace.id);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error.");
+    } finally {
+      setIndexing(false);
+    }
+  }
 
   async function handleSelectRepo(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -40,6 +80,8 @@ export function RepoPanel() {
     setError(null);
     setSelectedFile(null);
     setSearchResult(null);
+    setLastIndexResult(null);
+    setIndexStatus(null);
 
     try {
       const selectRes = await fetchWithAuth("/api/repo/select", {
@@ -55,6 +97,7 @@ export function RepoPanel() {
 
       const ws = (await selectRes.json()) as Workspace;
       setWorkspace(ws);
+      onWorkspaceSelected?.(ws);
 
       const [treeRes, metaRes] = await Promise.all([
         fetchWithAuth(`/api/repo/${ws.id}/tree`),
@@ -63,9 +106,11 @@ export function RepoPanel() {
 
       if (treeRes.ok) setTree((await treeRes.json()) as FileTree);
       if (metaRes.ok) setMetadata((await metaRes.json()) as RepositoryMetadata);
+      await refreshIndexStatus(ws.id);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error.");
       setWorkspace(null);
+      onWorkspaceSelected?.(null);
       setTree(null);
       setMetadata(null);
     } finally {
@@ -153,6 +198,33 @@ export function RepoPanel() {
               {lang.language} · {lang.file_count}
             </span>
           ))}
+        </div>
+      )}
+
+      {workspace && (
+        <div className="index-bar">
+          <div className="index-status">
+            {indexStatus?.indexed ? (
+              <span>
+                Indexed — <strong>{indexStatus.chunk_count}</strong> chunks searchable
+                {lastIndexResult && (
+                  <span className="index-detail">
+                    {" "}
+                    ({lastIndexResult.file_count} files, {lastIndexResult.duration_seconds}s)
+                  </span>
+                )}
+              </span>
+            ) : (
+              <span>Not indexed yet — the agent can't retrieve context until you index.</span>
+            )}
+          </div>
+          <button type="button" onClick={handleIndex} disabled={indexing}>
+            {indexing
+              ? "Indexing..."
+              : indexStatus?.indexed
+                ? "Re-index"
+                : "Index repository"}
+          </button>
         </div>
       )}
 

@@ -3,17 +3,28 @@ import { type FormEvent, useState } from "react";
 import { AuthForm } from "./components/AuthForm";
 import { RepoPanel } from "./components/RepoPanel";
 import { useAuth } from "./context/AuthContext";
+import type { Workspace } from "./lib/repoTypes";
+
+type ChatSource = {
+  path: string;
+  symbol: string | null;
+  start_line: number;
+  end_line: number;
+  score: number;
+};
 
 type ChatResponse = {
   response: string;
   model: string;
+  sources: ChatSource[];
 };
 
-function ChatPanel() {
+function ChatPanel({ workspace }: { workspace: Workspace | null }) {
   const { user, logout, fetchWithAuth } = useAuth();
   const [message, setMessage] = useState("");
   const [response, setResponse] = useState("");
   const [model, setModel] = useState("");
+  const [sources, setSources] = useState<ChatSource[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,12 +36,16 @@ function ChatPanel() {
     setLoading(true);
     setError("");
     setResponse("");
+    setSources([]);
 
     try {
       const result = await fetchWithAuth("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message,
+          workspace_id: workspace?.id ?? null,
+        }),
       });
 
       if (!result.ok) {
@@ -41,6 +56,7 @@ function ChatPanel() {
       const data = (await result.json()) as ChatResponse;
       setResponse(data.response);
       setModel(data.model);
+      setSources(data.sources);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error.");
     } finally {
@@ -53,7 +69,10 @@ function ChatPanel() {
       <div className="panel-header">
         <div>
           <h2>Agent Playground</h2>
-          <p>Signed in as {user?.email}</p>
+          <p>
+            Signed in as {user?.email}
+            {workspace && <> · grounded in {workspace.name}</>}
+          </p>
         </div>
         <div className="panel-header-actions">
           {model && <span className="model-badge">{model}</span>}
@@ -69,7 +88,11 @@ function ChatPanel() {
           id="message"
           value={message}
           onChange={(event) => setMessage(event.target.value)}
-          placeholder="Ask the local model a software engineering question..."
+          placeholder={
+            workspace
+              ? `Ask about ${workspace.name}...`
+              : "Ask the local model a software engineering question..."
+          }
           rows={7}
         />
 
@@ -86,6 +109,21 @@ function ChatPanel() {
           <pre>{response}</pre>
         </article>
       )}
+
+      {sources.length > 0 && (
+        <div className="sources">
+          <h3>Retrieved from your repository</h3>
+          {sources.map((source, index) => (
+            <div key={`${source.path}:${source.start_line}:${index}`} className="source-row">
+              <span className="source-path">
+                {source.path}:{source.start_line}-{source.end_line}
+              </span>
+              {source.symbol && <span className="badge">{source.symbol}</span>}
+              <span className="source-score">score {source.score.toFixed(2)}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -93,6 +131,7 @@ function ChatPanel() {
 function App() {
   const { isLoading, isAuthenticated } = useAuth();
   const [tab, setTab] = useState<"chat" | "repo">("repo");
+  const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
 
   return (
     <main className="app-shell">
@@ -127,7 +166,11 @@ function App() {
               Agent Playground
             </button>
           </nav>
-          {tab === "repo" ? <RepoPanel /> : <ChatPanel />}
+          {tab === "repo" ? (
+            <RepoPanel onWorkspaceSelected={setActiveWorkspace} />
+          ) : (
+            <ChatPanel workspace={activeWorkspace} />
+          )}
         </>
       ) : (
         <AuthForm />

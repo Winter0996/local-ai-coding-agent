@@ -376,6 +376,72 @@ input[type="password"]:focus {
   text-align: center;
 }
 
+.index-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #2a3242;
+  border-radius: 12px;
+  background: #131722;
+}
+
+.index-status {
+  font-size: 13px;
+  color: #9aa7bb;
+}
+
+.index-detail {
+  color: #6c7f9e;
+}
+
+.index-bar button {
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.sources {
+  margin-top: 16px;
+  border: 1px solid #273142;
+  border-radius: 12px;
+  padding: 14px;
+  background: #0b0e13;
+}
+
+.sources h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #9aa7bb;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-top: 1px solid #1c2434;
+  font-size: 13px;
+}
+
+.source-row:first-of-type {
+  border-top: none;
+}
+
+.source-path {
+  color: #c7d0dd;
+  font-family: monospace;
+}
+
+.source-score {
+  margin-left: auto;
+  color: #6c7f9e;
+  font-size: 12px;
+}
+
 .response,
 .error {
   margin-top: 24px;
