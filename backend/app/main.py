@@ -13,6 +13,7 @@ from app.api.chat import router as chat_router
 from app.api.health import router as health_router
 from app.auth.routes import router as auth_router
 from app.db import init_db
+from app.rag.routes import router as rag_router
 from app.repository.routes import router as repository_router
 
 app = FastAPI(
@@ -44,3 +45,4 @@ app.include_router(health_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 app.include_router(auth_router, prefix="/api")
 app.include_router(repository_router, prefix="/api")
+app.include_router(rag_router, prefix="/api")

@@ -21,6 +21,7 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+chroma_data/
 
 # IDE
 .vscode/

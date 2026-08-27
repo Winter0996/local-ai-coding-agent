@@ -35,26 +35,17 @@ def _to_tree_response(node: service.TreeNode) -> TreeNodeResponse:
 
 
 def _get_owned_workspace(db: Session, workspace_id: str, user: User) -> Workspace:
-    """Looking up by id AND user_id (not id alone) is what stops one user
-    from reading another user's workspace by guessing/enumerating IDs — this
-    is the multi-tenant boundary, the repository-path boundary in
-    service.py is a separate, filesystem-level one."""
-    workspace = db.get(Workspace, workspace_id)
-    if workspace is None or workspace.user_id != user.id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Workspace not found."
-        )
-    return workspace
+    try:
+        return service.get_owned_workspace(db, workspace_id, user)
+    except service.WorkspaceNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 def _existing_root(workspace: Workspace) -> Path:
-    root = Path(workspace.root_path)
-    if not root.exists():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Repository path no longer exists on disk.",
-        )
-    return root
+    try:
+        return service.require_existing_root(workspace)
+    except service.RepositoryNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
 
 
 @router.post("/select", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)

@@ -2,6 +2,10 @@ from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from sqlmodel import Session
+
+from app.auth.models import User
+from app.repository.models import Workspace
 from app.repository.security import (
     EXCLUDED_DIRS,
     MAX_FILE_BYTES,
@@ -29,6 +33,28 @@ class InvalidPathError(RepositoryError):
 
 class PathTraversalError(RepositoryError):
     pass
+
+
+class WorkspaceNotFoundError(RepositoryError):
+    pass
+
+
+def get_owned_workspace(db: Session, workspace_id: str, user: User) -> Workspace:
+    """Looking up by id AND user_id (not id alone) is what stops one user
+    from reading another user's workspace by guessing/enumerating IDs.
+    Shared by both app/repository/routes.py and app/rag/routes.py so the
+    multi-tenant boundary is enforced identically in both places."""
+    workspace = db.get(Workspace, workspace_id)
+    if workspace is None or workspace.user_id != user.id:
+        raise WorkspaceNotFoundError("Workspace not found.")
+    return workspace
+
+
+def require_existing_root(workspace: Workspace) -> Path:
+    root = Path(workspace.root_path)
+    if not root.exists():
+        raise RepositoryNotFoundError("Repository path no longer exists on disk.")
+    return root
 
 
 def resolve_repo_root(raw_path: str) -> Path:
@@ -99,7 +125,7 @@ def build_tree(root: Path) -> tuple[TreeNode, bool]:
         nonlocal node_count, truncated
         node = TreeNode(
             name=dir_path.name or str(dir_path),
-                        path="" if dir_path == root else dir_path.relative_to(root).as_posix(),
+            path="" if dir_path == root else dir_path.relative_to(root).as_posix(),
             type="directory",
         )
 
