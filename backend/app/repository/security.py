@@ -41,6 +41,7 @@ LANGUAGE_BY_EXTENSION = {
 
 
 def detect_language(path: Path) -> str | None:
+    """Maps file extensions to language names for the tree view and metadata."""
     if path.name == "Dockerfile":
         return "Dockerfile"
     return LANGUAGE_BY_EXTENSION.get(path.suffix.lower())

@@ -66,3 +66,11 @@ export type RepositoryMetadata = {
   languages: LanguageBreakdown[];
   has_git: boolean;
 };
+
+export type AgentProposal = {
+  workspace_id: string;
+  target_path: string;
+  diff: string;
+  proposed_content: string;
+  explanation: string;
+};

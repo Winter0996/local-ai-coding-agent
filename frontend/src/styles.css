@@ -442,6 +442,88 @@ input[type="password"]:focus {
   font-size: 12px;
 }
 
+.diff-view {
+  margin: 12px 0;
+  padding: 12px;
+  border: 1px solid #2a3242;
+  border-radius: 12px;
+  background: #0b0e13;
+  overflow-x: auto;
+  font-size: 12.5px;
+  line-height: 1.5;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.diff-line {
+  white-space: pre;
+  font-family: monospace;
+  color: #9aa7bb;
+}
+
+.diff-line-header {
+  color: #6c7f9e;
+}
+
+.diff-line-hunk {
+  color: #8ea2bf;
+}
+
+.diff-line-add {
+  background: rgba(80, 200, 130, 0.12);
+  color: #7fd9a0;
+}
+
+.diff-line-remove {
+  background: rgba(220, 90, 100, 0.12);
+  color: #ff9aa2;
+}
+
+.proposal {
+  margin-top: 20px;
+  border-top: 1px solid #273142;
+  padding-top: 16px;
+}
+
+.proposal-header {
+  margin-bottom: 6px;
+}
+
+.proposal-target {
+  font-family: monospace;
+  font-size: 13px;
+  color: #e8ecf3;
+  background: #1c2434;
+  padding: 3px 10px;
+  border-radius: 999px;
+}
+
+.proposal-explanation {
+  color: #8f9bad;
+  font-size: 13px;
+  margin: 8px 0;
+}
+
+.proposal-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.proposal-actions button:first-child {
+  background: #6fd68f;
+}
+
+.applied-banner {
+  margin-top: 8px;
+  padding: 10px 14px;
+  border: 1px solid #2d5a3d;
+  background: rgba(80, 200, 130, 0.08);
+  border-radius: 10px;
+  color: #7fd9a0;
+  font-size: 13px;
+}
+
 .response,
 .error {
   margin-top: 24px;
@@ -459,6 +541,32 @@ input[type="password"]:focus {
   overflow-wrap: anywhere;
   color: #c8d1df;
   line-height: 1.65;
+}
+
+.error {
+  border: 1px solid #633b42;
+  background: #241519;
+  color: #ffb8c0;
+}
+
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  color: #667287;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding-top: 36px;
+  }
+
+  .panel-header,
+  footer {
+    flex-direction: column;
+  }
 }
 
 .error {

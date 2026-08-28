@@ -1,5 +1,6 @@
 import { type FormEvent, useState } from "react";
 
+import { AgentPanel } from "./components/AgentPanel";
 import { AuthForm } from "./components/AuthForm";
 import { RepoPanel } from "./components/RepoPanel";
 import { useAuth } from "./context/AuthContext";
@@ -130,7 +131,7 @@ function ChatPanel({ workspace }: { workspace: Workspace | null }) {
 
 function App() {
   const { isLoading, isAuthenticated } = useAuth();
-  const [tab, setTab] = useState<"chat" | "repo">("repo");
+  const [tab, setTab] = useState<"chat" | "repo" | "agent">("repo");
   const [activeWorkspace, setActiveWorkspace] = useState<Workspace | null>(null);
 
   return (
@@ -165,9 +166,18 @@ function App() {
             >
               Agent Playground
             </button>
+            <button
+              type="button"
+              className={tab === "agent" ? "tab-active" : ""}
+              onClick={() => setTab("agent")}
+            >
+              Agent Edit
+            </button>
           </nav>
           {tab === "repo" ? (
             <RepoPanel onWorkspaceSelected={setActiveWorkspace} />
+          ) : tab === "agent" ? (
+            <AgentPanel workspace={activeWorkspace} />
           ) : (
             <ChatPanel workspace={activeWorkspace} />
           )}

@@ -254,6 +254,11 @@ class RepositoryMetadata:
     languages: dict[str, int]
     has_git: bool
 
+def list_file_paths(root: Path) -> list[str]:
+    """All indexable-repository-relative file paths, POSIX-style. Used by
+    the agent to detect when a user's message explicitly names a file."""
+    return sorted(f.relative_to(root).as_posix() for f in _iter_files(root))
+
 
 def get_metadata(root: Path) -> RepositoryMetadata:
     file_count = 0
