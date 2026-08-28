@@ -1,6 +1,5 @@
 from dotenv import load_dotenv
 
-
 # Must run before any app.* imports below — several modules (e.g.
 # app.auth.tokens) read required environment variables like JWT_SECRET at
 # *import time*, so the .env file has to be loaded into the process
@@ -10,13 +9,13 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.agent.routes import router as agent_router
 from app.api.chat import router as chat_router
 from app.api.health import router as health_router
 from app.auth.routes import router as auth_router
 from app.db import init_db
 from app.rag.routes import router as rag_router
 from app.repository.routes import router as repository_router
-from app.agent.routes import router as agent_router
 
 app = FastAPI(
     title="CodeForge AI",
