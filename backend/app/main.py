@@ -16,6 +16,7 @@ from app.auth.routes import router as auth_router
 from app.db import init_db
 from app.rag.routes import router as rag_router
 from app.repository.routes import router as repository_router
+from app.validation.routes import router as validation_router
 
 app = FastAPI(
     title="CodeForge AI",
@@ -48,3 +49,4 @@ app.include_router(auth_router, prefix="/api")
 app.include_router(repository_router, prefix="/api")
 app.include_router(rag_router, prefix="/api")
 app.include_router(agent_router, prefix="/api")
+app.include_router(validation_router, prefix="/api")

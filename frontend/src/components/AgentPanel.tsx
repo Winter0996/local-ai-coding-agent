@@ -1,7 +1,7 @@
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { useAuth } from "../context/AuthContext";
-import type { AgentProposal, Workspace } from "../lib/repoTypes";
+import type { AgentProposal, CommandResult, Workspace } from "../lib/repoTypes";
 import { DiffView } from "./DiffView";
 
 type AgentPanelProps = {
@@ -17,6 +17,21 @@ export function AgentPanel({ workspace }: AgentPanelProps) {
   const [applied, setApplied] = useState(false);
   const [error, setError] = useState("");
 
+  const [availableCommands, setAvailableCommands] = useState<string[]>([]);
+  const [runningCommand, setRunningCommand] = useState<string | null>(null);
+  const [lastResult, setLastResult] = useState<CommandResult | null>(null);
+
+  useEffect(() => {
+    if (!workspace) {
+      setAvailableCommands([]);
+      return;
+    }
+    fetchWithAuth(`/api/agent/${workspace.id}/validation/commands`)
+      .then((res) => (res.ok ? res.json() : { commands: [] }))
+      .then((body) => setAvailableCommands(body.commands ?? []))
+      .catch(() => setAvailableCommands([]));
+  }, [workspace, fetchWithAuth]);
+
   async function handlePropose(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!workspace || !message.trim()) return;
@@ -25,6 +40,7 @@ export function AgentPanel({ workspace }: AgentPanelProps) {
     setError("");
     setProposal(null);
     setApplied(false);
+    setLastResult(null);
 
     try {
       const response = await fetchWithAuth(`/api/agent/${workspace.id}/propose`, {
@@ -78,6 +94,45 @@ export function AgentPanel({ workspace }: AgentPanelProps) {
   function handleDiscard() {
     setProposal(null);
     setApplied(false);
+    setLastResult(null);
+  }
+
+  async function handleRunCommand(commandKey: string) {
+    if (!workspace) return;
+
+    setRunningCommand(commandKey);
+    setError("");
+
+    try {
+      const response = await fetchWithAuth(`/api/agent/${workspace.id}/validation/run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command_key: commandKey }),
+      });
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null);
+        throw new Error(body?.detail ?? "Could not run that command.");
+      }
+
+      setLastResult((await response.json()) as CommandResult);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error.");
+    } finally {
+      setRunningCommand(null);
+    }
+  }
+
+  function handleFixBasedOnFailure() {
+    if (!lastResult || !proposal) return;
+    const failureExcerpt = (lastResult.stderr || lastResult.stdout).slice(0, 2000);
+    setMessage(
+      `The previous change to ${proposal.target_path} broke '${lastResult.command_key}'. ` +
+        `Fix it. Failure output:\n${failureExcerpt}`,
+    );
+    setProposal(null);
+    setApplied(false);
+    setLastResult(null);
   }
 
   if (!workspace) {
@@ -144,6 +199,53 @@ export function AgentPanel({ workspace }: AgentPanelProps) {
               >
                 Discard
               </button>
+            </div>
+          )}
+
+          {applied && availableCommands.length > 0 && (
+            <div className="validation">
+              <h3>Validate</h3>
+              <div className="validation-buttons">
+                {availableCommands.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleRunCommand(key)}
+                    disabled={runningCommand !== null}
+                  >
+                    {runningCommand === key ? "Running..." : `Run ${key}`}
+                  </button>
+                ))}
+              </div>
+
+              {lastResult && (
+                <div className={`validation-result ${lastResult.passed ? "passed" : "failed"}`}>
+                  <div className="validation-result-header">
+                    <span>
+                      {lastResult.timed_out
+                        ? "Timed out"
+                        : lastResult.passed
+                          ? "Passed"
+                          : "Failed"}
+                    </span>
+                    <span className="validation-duration">
+                      {lastResult.duration_seconds}s
+                    </span>
+                  </div>
+                  <pre className="validation-output">
+                    {(lastResult.stdout + "\n" + lastResult.stderr).trim() ||
+                      "(no output)"}
+                  </pre>
+                  {lastResult.truncated && (
+                    <p className="tree-truncated">Output truncated.</p>
+                  )}
+                  {!lastResult.passed && (
+                    <button type="button" onClick={handleFixBasedOnFailure}>
+                      Ask agent to fix this
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>

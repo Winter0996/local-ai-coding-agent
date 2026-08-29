@@ -67,6 +67,17 @@ export type RepositoryMetadata = {
   has_git: boolean;
 };
 
+export type CommandResult = {
+  command_key: string;
+  exit_code: number | null;
+  stdout: string;
+  stderr: string;
+  truncated: boolean;
+  timed_out: boolean;
+  duration_seconds: number;
+  passed: boolean;
+};
+
 export type AgentProposal = {
   workspace_id: string;
   target_path: string;

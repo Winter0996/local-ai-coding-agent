@@ -524,6 +524,78 @@ input[type="password"]:focus {
   font-size: 13px;
 }
 
+.validation {
+  margin-top: 20px;
+  border-top: 1px solid #273142;
+  padding-top: 16px;
+}
+
+.validation h3 {
+  font-size: 13px;
+  color: #9aa7bb;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.validation-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.validation-buttons button {
+  margin-top: 0;
+  background: #131722;
+  border: 1px solid #2a3242;
+  color: #c7d0dd;
+}
+
+.validation-result {
+  margin-top: 12px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #2a3242;
+}
+
+.validation-result.passed .validation-result-header {
+  background: rgba(80, 200, 130, 0.12);
+  color: #7fd9a0;
+}
+
+.validation-result.failed .validation-result-header {
+  background: rgba(220, 90, 100, 0.12);
+  color: #ff9aa2;
+}
+
+.validation-result-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.validation-duration {
+  font-weight: 400;
+  color: #6c7f9e;
+}
+
+.validation-output {
+  margin: 0;
+  padding: 12px 14px;
+  background: #0b0e13;
+  color: #9aa7bb;
+  font-size: 12px;
+  max-height: 300px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.validation-result button {
+  margin: 12px 14px;
+}
+
 .response,
 .error {
   margin-top: 24px;

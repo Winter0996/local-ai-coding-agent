@@ -34,10 +34,10 @@
 - [ ] SSE event stream
 
 ## Phase 5 — Safe code modification
-- [ ] Patch generation
-- [ ] Diff viewer
-- [ ] Approval workflow
-- [ ] Apply patch
+- [x] Patch generation (full-file rewrite, diffed via difflib)
+- [x] Diff viewer
+- [x] Approval workflow (approve/discard in UI, server re-validates path regardless)
+- [x] Apply patch
 - [ ] Audit log
 
 ## Phase 6 — Validation
