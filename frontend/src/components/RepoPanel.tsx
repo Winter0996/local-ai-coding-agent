@@ -14,37 +14,88 @@ import { FileTreeView } from "./FileTreeView";
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+
+  if (bytes < 1024 * 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 type RepoPanelProps = {
-  onWorkspaceSelected?: (workspace: Workspace | null) => void;
+  onWorkspaceSelected?: (
+    workspace: Workspace | null,
+  ) => void;
 };
 
-export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
+function FolderIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      width="15"
+      height="15"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3.5 6.5h6l2 2h9v9.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-9.5a2 2 0 0 1 2-2Z" />
+      <path d="M3.5 6.5v-1a2 2 0 0 1 2-2h4l2 2h4" />
+    </svg>
+  );
+}
+
+export function RepoPanel({
+  onWorkspaceSelected,
+}: RepoPanelProps) {
   const { fetchWithAuth } = useAuth();
 
   const [path, setPath] = useState("");
-  const [workspace, setWorkspace] = useState<Workspace | null>(null);
-  const [metadata, setMetadata] = useState<RepositoryMetadata | null>(null);
-  const [tree, setTree] = useState<FileTree | null>(null);
-  const [selectedFile, setSelectedFile] = useState<FileContent | null>(null);
+  const [workspace, setWorkspace] =
+    useState<Workspace | null>(null);
+
+  const [metadata, setMetadata] =
+    useState<RepositoryMetadata | null>(null);
+
+  const [tree, setTree] =
+    useState<FileTree | null>(null);
+
+  const [selectedFile, setSelectedFile] =
+    useState<FileContent | null>(null);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchResult, setSearchResult] = useState<SearchResult | null>(null);
-  const [indexStatus, setIndexStatus] = useState<IndexStatus | null>(null);
-  const [lastIndexResult, setLastIndexResult] = useState<IndexResult | null>(null);
+
+  const [searchResult, setSearchResult] =
+    useState<SearchResult | null>(null);
+
+  const [indexStatus, setIndexStatus] =
+    useState<IndexStatus | null>(null);
+
+  const [lastIndexResult, setLastIndexResult] =
+    useState<IndexResult | null>(null);
 
   const [selecting, setSelecting] = useState(false);
-  const [loadingFile, setLoadingFile] = useState(false);
+  const [loadingFile, setLoadingFile] =
+    useState(false);
   const [searching, setSearching] = useState(false);
   const [indexing, setIndexing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  async function refreshIndexStatus(workspaceId: string) {
-    const response = await fetchWithAuth(`/api/repo/${workspaceId}/index/status`);
+  const [error, setError] =
+    useState<string | null>(null);
+
+  async function refreshIndexStatus(
+    workspaceId: string,
+  ) {
+    const response = await fetchWithAuth(
+      `/api/repo/${workspaceId}/index/status`,
+    );
+
     if (response.ok) {
-      setIndexStatus((await response.json()) as IndexStatus);
+      setIndexStatus(
+        (await response.json()) as IndexStatus,
+      );
     }
   }
 
@@ -55,25 +106,85 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
     setError(null);
 
     try {
-      const response = await fetchWithAuth(`/api/repo/${workspace.id}/index`, {
-        method: "POST",
-      });
+      const response = await fetchWithAuth(
+        `/api/repo/${workspace.id}/index`,
+        {
+          method: "POST",
+        },
+      );
+
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.detail ?? "Indexing failed.");
+        const body =
+          await response.json().catch(() => null);
+
+        throw new Error(
+          body?.detail ?? "Indexing failed.",
+        );
       }
-      const result = (await response.json()) as IndexResult;
+
+      const result =
+        (await response.json()) as IndexResult;
+
       setLastIndexResult(result);
+
       await refreshIndexStatus(workspace.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error.",
+      );
     } finally {
       setIndexing(false);
     }
   }
 
-  async function handleSelectRepo(event: FormEvent<HTMLFormElement>) {
+  async function handleBrowse() {
+    setSelecting(true);
+    setError(null);
+
+    try {
+      const response = await fetchWithAuth(
+        "/api/repo/pick-directory",
+        {
+          method: "POST",
+        },
+      );
+
+      if (!response.ok) {
+        const body =
+          await response.json().catch(() => null);
+
+        throw new Error(
+          body?.detail ??
+            "Could not open the folder picker.",
+        );
+      }
+
+      const data =
+        (await response.json()) as {
+          path: string | null;
+        };
+
+      if (data.path) {
+        setPath(data.path);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Could not open the folder picker.",
+      );
+    } finally {
+      setSelecting(false);
+    }
+  }
+
+  async function handleSelectRepo(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
+
     if (!path.trim()) return;
 
     setSelecting(true);
@@ -84,33 +195,68 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
     setIndexStatus(null);
 
     try {
-      const selectRes = await fetchWithAuth("/api/repo/select", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path }),
-      });
+      const selectRes = await fetchWithAuth(
+        "/api/repo/select",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ path }),
+        },
+      );
 
       if (!selectRes.ok) {
-        const body = await selectRes.json().catch(() => null);
-        throw new Error(body?.detail ?? "Could not open that repository.");
+        const body =
+          await selectRes.json().catch(() => null);
+
+        throw new Error(
+          body?.detail ??
+            "Could not open that repository.",
+        );
       }
 
-      const ws = (await selectRes.json()) as Workspace;
+      const ws =
+        (await selectRes.json()) as Workspace;
+
       setWorkspace(ws);
+
       onWorkspaceSelected?.(ws);
 
-      const [treeRes, metaRes] = await Promise.all([
-        fetchWithAuth(`/api/repo/${ws.id}/tree`),
-        fetchWithAuth(`/api/repo/${ws.id}/metadata`),
-      ]);
+      const [treeRes, metaRes] =
+        await Promise.all([
+          fetchWithAuth(
+            `/api/repo/${ws.id}/tree`,
+          ),
+          fetchWithAuth(
+            `/api/repo/${ws.id}/metadata`,
+          ),
+        ]);
 
-      if (treeRes.ok) setTree((await treeRes.json()) as FileTree);
-      if (metaRes.ok) setMetadata((await metaRes.json()) as RepositoryMetadata);
+      if (treeRes.ok) {
+        setTree(
+          (await treeRes.json()) as FileTree,
+        );
+      }
+
+      if (metaRes.ok) {
+        setMetadata(
+          (await metaRes.json()) as RepositoryMetadata,
+        );
+      }
+
       await refreshIndexStatus(ws.id);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error.",
+      );
+
       setWorkspace(null);
+
       onWorkspaceSelected?.(null);
+
       setTree(null);
       setMetadata(null);
     } finally {
@@ -118,7 +264,9 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
     }
   }
 
-  async function handleSelectFile(filePath: string) {
+  async function handleSelectFile(
+    filePath: string,
+  ) {
     if (!workspace) return;
 
     setLoadingFile(true);
@@ -126,38 +274,75 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
 
     try {
       const response = await fetchWithAuth(
-        `/api/repo/${workspace.id}/file?path=${encodeURIComponent(filePath)}`,
+        `/api/repo/${workspace.id}/file?path=${encodeURIComponent(
+          filePath,
+        )}`,
       );
+
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.detail ?? "Could not read that file.");
+        const body =
+          await response.json().catch(() => null);
+
+        throw new Error(
+          body?.detail ??
+            "Could not read that file.",
+        );
       }
-      setSelectedFile((await response.json()) as FileContent);
+
+      setSelectedFile(
+        (await response.json()) as FileContent,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error.",
+      );
     } finally {
       setLoadingFile(false);
     }
   }
 
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
+  async function handleSearch(
+    event: FormEvent<HTMLFormElement>,
+  ) {
     event.preventDefault();
-    if (!workspace || !searchQuery.trim()) return;
+
+    if (
+      !workspace ||
+      !searchQuery.trim()
+    ) {
+      return;
+    }
 
     setSearching(true);
     setError(null);
 
     try {
       const response = await fetchWithAuth(
-        `/api/repo/${workspace.id}/search?q=${encodeURIComponent(searchQuery)}`,
+        `/api/repo/${workspace.id}/search?q=${encodeURIComponent(
+          searchQuery,
+        )}`,
       );
+
       if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        throw new Error(body?.detail ?? "Search failed.");
+        const body =
+          await response.json().catch(() => null);
+
+        throw new Error(
+          body?.detail ?? "Search failed.",
+        );
       }
-      setSearchResult((await response.json()) as SearchResult);
+
+      setSearchResult(
+        (await response.json()) as SearchResult,
+      );
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unknown error.",
+      );
     } finally {
       setSearching(false);
     }
@@ -168,36 +353,91 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
       <div className="panel-header">
         <div>
           <h2>Repository</h2>
-          <p>Point CodeForge AI at a local project folder.</p>
+
+          <p>
+            Point CodeForge AI at a local project folder.
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSelectRepo} className="repo-select-form">
+      <form
+        onSubmit={handleSelectRepo}
+        className="repo-select-form"
+      >
         <input
           type="text"
           value={path}
-          onChange={(event) => setPath(event.target.value)}
-          placeholder="C:\Users\you\Projects\my-repo"
+          onChange={(event) =>
+            setPath(event.target.value)
+          }
+          placeholder={
+            "C:\\Users\\you\\Projects\\my-repo"
+          }
+          aria-label="Repository path"
         />
-        <button disabled={selecting || !path.trim()} type="submit">
-          {selecting ? "Opening..." : "Open"}
+
+        <button
+          type="button"
+          className="browse-button"
+          onClick={() => void handleBrowse()}
+          disabled={selecting}
+          title="Choose a folder using your computer's file picker"
+        >
+          <FolderIcon />
+          Browse
+        </button>
+
+        <button
+          className="primary-action"
+          disabled={
+            selecting || !path.trim()
+          }
+          type="submit"
+        >
+          {selecting
+            ? "Opening..."
+            : "Open"}
         </button>
       </form>
 
-      {error && <div className="error">{error}</div>}
+      {error && (
+        <div className="error">
+          {error}
+        </div>
+      )}
 
       {metadata && (
         <div className="repo-meta">
           <span>
-            <strong>{metadata.file_count}</strong> files
+            <strong>
+              {metadata.file_count}
+            </strong>{" "}
+            files
           </span>
-          <span>{formatBytes(metadata.total_size_bytes)}</span>
-          {metadata.has_git && <span className="badge">git</span>}
-          {metadata.languages.slice(0, 5).map((lang) => (
-            <span key={lang.language} className="badge">
-              {lang.language} · {lang.file_count}
+
+          <span>
+            {formatBytes(
+              metadata.total_size_bytes,
+            )}
+          </span>
+
+          {metadata.has_git && (
+            <span className="badge">
+              git
             </span>
-          ))}
+          )}
+
+          {metadata.languages
+            .slice(0, 5)
+            .map((lang) => (
+              <span
+                key={lang.language}
+                className="badge"
+              >
+                {lang.language} ·{" "}
+                {lang.file_count}
+              </span>
+            ))}
         </div>
       )}
 
@@ -206,19 +446,42 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
           <div className="index-status">
             {indexStatus?.indexed ? (
               <span>
-                Indexed — <strong>{indexStatus.chunk_count}</strong> chunks searchable
+                Indexed —{" "}
+                <strong>
+                  {indexStatus.chunk_count}
+                </strong>{" "}
+                chunks searchable
+
                 {lastIndexResult && (
                   <span className="index-detail">
                     {" "}
-                    ({lastIndexResult.file_count} files, {lastIndexResult.duration_seconds}s)
+                    (
+                    {
+                      lastIndexResult.file_count
+                    }{" "}
+                    files,{" "}
+                    {
+                      lastIndexResult.duration_seconds
+                    }
+                    s)
                   </span>
                 )}
               </span>
             ) : (
-              <span>Not indexed yet — the agent can't retrieve context until you index.</span>
+              <span>
+                Repository not indexed
+              </span>
             )}
           </div>
-          <button type="button" onClick={handleIndex} disabled={indexing}>
+
+          <button
+            type="button"
+            className="secondary-action"
+            onClick={() =>
+              void handleIndex()
+            }
+            disabled={indexing}
+          >
             {indexing
               ? "Indexing..."
               : indexStatus?.indexed
@@ -228,78 +491,136 @@ export function RepoPanel({ onWorkspaceSelected }: RepoPanelProps) {
         </div>
       )}
 
-      {workspace && (
-        <form onSubmit={handleSearch} className="repo-search-form">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Search across this repository..."
-          />
-          <button disabled={searching || !searchQuery.trim()} type="submit">
-            {searching ? "Searching..." : "Search"}
-          </button>
-        </form>
-      )}
+      {workspace && tree && (
+        <div className="repo-workspace">
+          <aside className="file-tree">
+            <div className="file-tree-header">
+              <strong>
+                {workspace.name}
+              </strong>
+            </div>
 
-      {searchResult && (
-        <div className="search-results">
-          <p className="search-summary">
-            {searchResult.matches.length} match
-            {searchResult.matches.length === 1 ? "" : "es"}
-            {searchResult.truncated && " (showing first results)"}
-          </p>
-          {searchResult.matches.map((match, index) => (
-            <button
-              type="button"
-              key={`${match.path}:${match.line_number}:${index}`}
-              className="search-result-row"
-              onClick={() => handleSelectFile(match.path)}
-            >
-              <span className="search-result-path">
-                {match.path}:{match.line_number}
-              </span>
-              <code>{match.line_text}</code>
-            </button>
-          ))}
-        </div>
-      )}
-
-      {tree && (
-        <div className="repo-body">
-          <div className="tree-container">
             <FileTreeView
               node={tree.root}
-              selectedPath={selectedFile?.path ?? null}
-              onSelectFile={handleSelectFile}
+              selectedPath={
+                selectedFile?.path ?? null
+              }
+              onSelectFile={(filePath) =>
+                void handleSelectFile(
+                  filePath,
+                )
+              }
             />
             {tree.truncated && (
-              <p className="tree-truncated">Tree truncated — repository is large.</p>
+              <p className="tree-truncated">
+                Tree truncated — repository is large.
+              </p>
             )}
-          </div>
+          </aside>
 
-          <div className="file-viewer">
-            {loadingFile && <p>Loading file...</p>}
-            {!loadingFile && selectedFile && (
-              <>
-                <div className="file-viewer-header">
-                  <span>{selectedFile.path}</span>
-                  {selectedFile.language && (
-                    <span className="badge">{selectedFile.language}</span>
-                  )}
-                  {selectedFile.truncated && (
-                    <span className="badge badge-warning">truncated</span>
-                  )}
+          <section className="file-viewer">
+            <div className="file-viewer-header">
+              <form
+                onSubmit={handleSearch}
+                className="search-form"
+              >
+                <input
+                  value={searchQuery}
+                  onChange={(event) =>
+                    setSearchQuery(
+                      event.target.value,
+                    )
+                  }
+                  placeholder="Search repository..."
+                  aria-label="Search repository"
+                />
+
+                <button
+                  type="submit"
+                  className="secondary-action"
+                  disabled={
+                    searching ||
+                    !searchQuery.trim()
+                  }
+                >
+                  {searching
+                    ? "Searching..."
+                    : "Search"}
+                </button>
+              </form>
+            </div>
+
+            {searchResult && (
+              <div className="search-results">
+                <h3>
+                  Search results
+                </h3>
+
+                {searchResult.matches.map(
+                  (match, index) => (
+                    <button
+                      key={`${match.path}:${match.line_number}:${index}`}
+                      type="button"
+                      className="search-result"
+                      onClick={() =>
+                        void handleSelectFile(
+                          match.path,
+                        )
+                      }
+                    >
+                      <strong>
+                        {match.path}
+                      </strong>
+
+                      <span>
+                        Line {match.line_number}
+                      </span>
+
+                      <code>
+                        {match.line_text}
+                      </code>
+                    </button>
+                  ),
+                )}
+              </div>
+            )}
+
+            {loadingFile && (
+              <div className="empty-state">
+                Loading file...
+              </div>
+            )}
+
+            {!loadingFile &&
+              selectedFile && (
+                <article className="code-viewer">
+                  <div className="code-viewer-header">
+                    <span>
+                      {selectedFile.path}
+                    </span>
+
+                    <span className="badge">
+                      {selectedFile.language}
+                    </span>
+                  </div>
+
+                  <pre>
+                    <code>
+                      {selectedFile.content}
+                    </code>
+                  </pre>
+                </article>
+              )}
+
+            {!loadingFile &&
+              !selectedFile && (
+                <div className="empty-state">
+                  Select a file from the
+                  repository tree to inspect
+                  its contents.
                 </div>
-                <pre className="file-content">
-                  <code>{selectedFile.content}</code>
-                </pre>
-              </>
-            )}
-            {!loadingFile && !selectedFile && (
-              <p className="file-viewer-empty">Select a file to view its contents.</p>
-            )}
-          </div>
+              )}
+          </section>
         </div>
       )}
     </section>

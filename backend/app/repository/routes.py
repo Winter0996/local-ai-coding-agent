@@ -1,4 +1,7 @@
+import sys
+import tkinter as tk
 from pathlib import Path
+from tkinter import filedialog
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
@@ -46,6 +49,54 @@ def _existing_root(workspace: Workspace) -> Path:
         return service.require_existing_root(workspace)
     except service.RepositoryNotFoundError as exc:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+
+
+@router.post("/pick-directory")
+def pick_directory(
+    current_user: User = Depends(get_current_user),
+) -> dict[str, str | None]:
+    """
+    Open the native operating-system folder picker.
+
+    This endpoint is intended for the local CodeForge AI
+    application. The backend must be running on the same
+    machine as the repository being selected.
+    """
+
+    if sys.platform != "win32":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "The native folder picker is currently "
+                "implemented for Windows."
+            ),
+        )
+
+    root = None
+
+    try:
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes("-topmost", True)
+
+        selected = filedialog.askdirectory(
+            title="Select a CodeForge AI repository",
+            mustexist=True,
+        )
+
+        return {
+            "path": selected or None,
+        }
+
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Could not open the folder picker: {exc}",
+        ) from exc
+
+    finally:
+        if root is not None:
+            root.destroy()
 
 
 @router.post("/select", response_model=WorkspaceResponse, status_code=status.HTTP_201_CREATED)
