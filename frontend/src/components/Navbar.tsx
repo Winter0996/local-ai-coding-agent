@@ -1,117 +1,49 @@
 import { useAuth } from "../context/AuthContext";
 
-type Tab = "chat" | "repo" | "agent";
-
-type NavbarProps = {
-  tab: Tab;
-  onTabChange: (tab: Tab) => void;
-};
-
 function CodeBrowserIcon() {
   return (
     <svg
-      aria-hidden="true"
+      className="navbar-icon"
       viewBox="0 0 24 24"
-      width="20"
-      height="20"
       fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
     >
-      <path d="m8 8-4 4 4 4" />
-      <path d="m16 8 4 4-4 4" />
-      <path d="m14 4-4 16" />
+      <rect x="2" y="4" width="20" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.7" />
+      <line x1="2" y1="8.5" x2="22" y2="8.5" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="5.2" cy="6.3" r="0.9" fill="currentColor" />
+      <circle cx="8" cy="6.3" r="0.9" fill="currentColor" />
+      <circle cx="10.8" cy="6.3" r="0.9" fill="currentColor" />
+      <path
+        d="M9 12.5L6.5 15L9 17.5M15 12.5L17.5 15L15 17.5M13 11.5L11 18.5"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
 
-export function Navbar({
-  tab,
-  onTabChange,
-}: NavbarProps) {
-  const { isAuthenticated, user, logout } = useAuth();
+export function Navbar() {
+  const { user, isAuthenticated, logout } = useAuth();
 
   return (
-    <header className="site-nav">
-      <div className="nav-inner">
-        <button
-          className="brand"
-          type="button"
-          onClick={() => onTabChange("repo")}
-          aria-label="CodeForge AI home"
-        >
-          <span className="brand-icon">
-            <CodeBrowserIcon />
-          </span>
-
-          <span>
-            CodeForge
-            <small>AI</small>
-          </span>
-        </button>
+    <header className="navbar">
+      <div className="navbar-inner">
+        <div className="navbar-brand">
+          <CodeBrowserIcon />
+          <span className="navbar-title">CodeForge AI</span>
+        </div>
 
         {isAuthenticated && (
-          <nav
-            className="main-nav"
-            aria-label="Primary navigation"
-          >
-            <button
-              type="button"
-              className={`nav-link ${
-                tab === "repo" ? "nav-link-active" : ""
-              }`}
-              onClick={() => onTabChange("repo")}
-            >
-              Repository
-            </button>
-
-            <button
-              type="button"
-              className={`nav-link ${
-                tab === "chat" ? "nav-link-active" : ""
-              }`}
-              onClick={() => onTabChange("chat")}
-            >
-              Playground
-            </button>
-
-            <button
-              type="button"
-              className={`nav-link ${
-                tab === "agent" ? "nav-link-active" : ""
-              }`}
-              onClick={() => onTabChange("agent")}
-            >
-              Agent Edit
-            </button>
-          </nav>
-        )}
-
-        <div className="nav-actions">
-          {isAuthenticated && user && (
-            <div className="user-chip" title={user.email}>
-              <span className="user-avatar">
-                {user.email.charAt(0).toUpperCase()}
-              </span>
-
-              <span className="user-email">
-                {user.email}
-              </span>
-            </div>
-          )}
-
-          {isAuthenticated && (
-            <button
-              type="button"
-              className="secondary-action nav-logout"
-              onClick={() => void logout()}
-            >
+          <div className="navbar-actions">
+            <span className="navbar-user">{user?.email}</span>
+            <button type="button" className="navbar-signout" onClick={() => logout()}>
               Sign out
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </header>
   );

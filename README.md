@@ -207,3 +207,7 @@ oversights.
 ---
 
 Local-first. Open-source stack. $0 recurring cost.
+
+
+
+
